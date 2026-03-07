@@ -75,10 +75,14 @@ setup-project:
 		printf "%b\n" "$(GRAY)usage: make setup-project dir=/path/to/repo$(NC)"; \
 		exit 1; \
 	fi
-	@project_dir="$$(cd "$(dir)" && pwd)"; \
+	@project_input='$(dir)'; \
+	case "$$project_input" in \
+		~) project_input="$$HOME" ;; \
+		~/*) project_input="$$HOME/$${project_input#~/}" ;; \
+	esac; \
+	project_dir="$$(cd "$$project_input" && pwd)"; \
 	printf "%b\n" "$(GRAY)••••••• setting up agent structure in $$project_dir $(NC)"; \
-
-	@# root instruction files
+	: "root instruction files"; \
 	if [ ! -f "$$project_dir/AGENTS.md" ]; then \
 		touch "$$project_dir/AGENTS.md"; \
 		printf "%b\n" "$(GRAY)••••••• created AGENTS.md $(NC)"; \
@@ -87,8 +91,7 @@ setup-project:
 		printf "See @AGENTS.md\n" > "$$project_dir/CLAUDE.md"; \
 		printf "%b\n" "$(GRAY)••••••• created CLAUDE.md -> @AGENTS.md $(NC)"; \
 	fi; \
-
-	@# project agent directories
+	: "project agent directories"; \
 	mkdir -p \
 		"$$project_dir/.agents/skills" \
 		"$$project_dir/.agents/commands" \
@@ -98,8 +101,7 @@ setup-project:
 		"$$project_dir/.codex" \
 		"$$project_dir/.opencode" \
 		"$$project_dir/.gemini"; \
-
-	@# tool-specific links
+	: "tool-specific links"; \
 	rm -rf "$$project_dir/.claude/commands"; \
 	ln -sfn ../.agents/commands "$$project_dir/.claude/commands"; \
 	rm -rf "$$project_dir/.claude/skills"; \
@@ -107,8 +109,7 @@ setup-project:
 	rm -rf "$$project_dir/.codex/prompts"; \
 	ln -sfn ../.agents/commands "$$project_dir/.codex/prompts"; \
 	printf '{"context":{"fileName":["AGENTS.md"]}}\n' > "$$project_dir/.gemini/settings.json"; \
-
-	@# gitignore entries
+	: "gitignore entries"; \
 	if ! grep -qxF ".agents/tmp/**" "$$project_dir/.gitignore" 2>/dev/null; then \
 		printf ".agents/tmp/**\n" >> "$$project_dir/.gitignore"; \
 		printf "%b\n" "$(GRAY)••••••• added .agents/tmp/** to .gitignore $(NC)"; \
